@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video en Realidad Aumentada con Efectos Galácticos</title>
+    <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            touch-action: none; /* Evita gestos no deseados en móviles */
+        }
+        .info {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background-color: rgba(0,0,0,0.7);
+            color: white;
+            text-align: center;
+            z-index: 10;
+            padding: 10px;
+            font-family: Arial, sans-serif;
+            font-size: clamp(14px, 4vw, 18px); /* Tamaño de texto responsivo */
+        }
+        #play-button {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            padding: 15px 30px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: clamp(16px, 5vw, 20px);
+            cursor: pointer;
+            min-width: 200px; /* Tamaño mínimo para facilitar el toque */
+        }
+        #debug-info {
+            position: fixed;
+            bottom: 70px;
+            left: 10px;
+            background-color: rgba(0,0,0,0.7);
+            color: white;
+            padding: 5px;
+            font-family: monospace;
+            font-size: clamp(10px, 3vw, 12px);
+            z-index: 100;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+        #video-controls {
+            position: fixed;
+            bottom: 20px;
+            right: 10px;
+            z-index: 100;
+            background-color: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+        #video-selector {
+            margin-bottom: 10px;
+            padding: 8px;
+            width: 100%;
+            font-size: clamp(14px, 4vw, 16px);
+        }
+        .control-button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 8px 16px;
+            margin: 0 5px;
+            cursor: pointer;
+            min-width: 40px;
+            font-size: clamp(14px, 4vw, 16px);
+        }
+        #effect-toggle {
+            position: fixed;
+            bottom: 20px;
+            left: 10px;
+            z-index: 100;
+            padding: 10px 20px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: none;
+            min-width: 120px;
+            font-size: clamp(14px, 4vw, 16px);
+        }
+        #effects-selector {
+            position: fixed;
+            bottom: 60px;
+            left: 10px;
+            z-index: 100;
+            padding: 8px;
+            background-color: rgba(0,0,0,0.7);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: none;
+            min-width: 150px;
+            font-size: clamp(14px, 4vw, 16px);
+        }
+        /* Media query para dispositivos móviles */
+        @media (max-width: 768px) {
+            #video-entity {
+                width: 0.08 !important; /* Tamaño más pequeño para móviles */
+                height: 0.06 !important;
+            }
+            #video-glow {
+                width: 0.08 !important;
+                height: 0.06 !important;
+            }
+            .initialWidth {
+                width: 0.08 !important;
+                height: 0.06 !important;
+            }
+            .targetWidth {
+                width: 2 !important; /* Tamaño máximo más pequeño para móviles */
+                height: 1.5 !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="info">Muestra el marcador Hiro a la cámara para ver el video con efectos galácticos</div>
+    <button id="play-button">Iniciar AR y Video</button>
+    <div id="debug-info"></div>
+    <button id="effect-toggle">Desactivar Efecto</button>
+    
+    <select id="effects-selector">
+        <option value="saturn">Estela de Saturno</option>
+        <option value="stars">Estrellas Galácticas</option>
+    </select>
+    
+    <div id="video-controls">
+        <select id="video-selector">
+            <option value="/video.mp4">Mi Video Local</option>
+            <option value="/video2.mp4">Video Alternativo 1</option>
+            <option value="/video3.mp4">Video Alternativo 2</option>
+            <option value="/video4.mp4">Video Alternativo 3</option>
+        </select>
+        <button id="prev-video" class="control-button">&lt;</button>
+        <button id="next-video" class="control-button">&gt;</button>
+    </div>
+    
+    <a-scene embedded arjs='sourceType: webcam; debugUIEnabled: false;' vr-mode-ui="enabled: false">
+        <a-assets>
+            <video id="mivideo" crossorigin="anonymous" playsinline webkit-playsinline muted loop></video>
+            <img id="star-texture" src="data:image/png;base64,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" />
+        </a-assets>
+        
+        <a-marker preset="hiro" id="marker-hiro">
+            <!-- Video sin animaciones, las manejaremos por JavaScript -->
+            <a-video 
+                id="video-entity"
+                src="#mivideo" 
+                position="0 0.5 0" 
+                rotation="-90 0 0" 
+                width="0.1" 
+                height="0.075"
+                opacity="1">
+            </a-video>
+            
+            <!-- Efecto de estela tipo anillo de Saturno -->
+            <a-entity id="saturn-ring-container" position="0 0.49 0" rotation="-90 0 0">
+                <a-torus 
+                    id="saturn-ring" 
+                    color="#bf40bf" 
+                    radius="0.15" 
+                    radius-tubular="0.01"
+                    segments-tubular="32" 
+                    segments-radial="32"
+                    opacity="0.5"
+                    material="shader: flat; transparent: true; side: double"
+                    visible="false">
+                </a-torus>
+            </a-entity>
+            
+            <!-- Contenedor para las estrellas -->
+            <a-entity id="stars-container" position="0 0.49 0" rotation="-90 0 0" visible="false">
+                <!-- Las estrellas se crearán dinámicamente -->
+            </a-entity>
+            
+            <a-plane 
+                id="video-glow"
+                color="#00ffff" 
+                position="0 0.49 0" 
+                rotation="-90 0 0" 
+                width="0.1" 
+                height="0.075" 
+                opacity="0.1"
+                material="shader: flat; transparent: true; alphaTest: 0.01; depthTest: false; depthWrite: false; blending: additive">
+            </a-plane>
+        </a-marker>
+        
+        <a-entity camera></a-entity>
+    </a-scene>
+    
+    <script>
+        // Referencias a elementos
+        var playButton = document.getElementById('play-button');
+        var video = document.getElementById('mivideo');
+        var videoEntity = document.getElementById('video-entity');
+        var videoGlow = document.getElementById('video-glow');
+        var marker = document.querySelector('#marker-hiro');
+        var infoDiv = document.querySelector('.info');
+        var debugDiv = document.getElementById('debug-info');
+        var videoControls = document.getElementById('video-controls');
+        var videoSelector = document.getElementById('video-selector');
+        var prevVideoBtn = document.getElementById('prev-video');
+        var nextVideoBtn = document.getElementById('next-video');
+        var effectToggle = document.getElementById('effect-toggle');
+        var effectsSelector = document.getElementById('effects-selector');
+        var saturnRing = document.getElementById('saturn-ring');
+        var saturnRingContainer = document.getElementById('saturn-ring-container');
+        var starsContainer = document.getElementById('stars-container');
+        
+        // Estado del efecto
+        var effectEnabled = true;
+        var currentEffect = 'saturn'; // 'saturn' o 'stars'
+        
+        // Array de videos disponibles
+        var videos = Array.from(videoSelector.options).map(option => option.value);
+        var currentVideoIndex = 0;
+        
+        // Variables para la animación
+        var expansionAnimation = null;
+        var startTime = null;
+        var initialWidth = window.innerWidth <= 768 ? 0.08 : 0.1;
+        var initialHeight = window.innerWidth <= 768 ? 0.06 : 0.075;
+        var targetWidth = window.innerWidth <= 768 ? 2 : 3;
+        var targetHeight = window.innerWidth <= 768 ? 1.5 : 2.25;
+        var animationDuration = 1500; // 1.5 segundos
+        
+        // Variables para efectos especiales
+        var ringExpansionAnimation = null;
+        var ringStartTime = null;
+        var stars = [];
+        var maxStars = 50;
+        
+        // Función para mostrar información de depuración
+        function showDebugInfo(msg) {
+            debugDiv.innerHTML += msg + '<br>';
+            console.log(msg);
+            // Limitamos a las últimas 5 líneas
+            var lines = debugDiv.innerHTML.split('<br>');
+            if (lines.length > 5) {
+                debugDiv.innerHTML = lines.slice(lines.length - 5).join('<br>');
+            }
+        }
+        
+        // Función para animar la expansión usando requestAnimationFrame
+        function animateExpansion(timestamp) {
+            if (!startTime) startTime = timestamp;
+            var elapsedTime = timestamp - startTime;
+            
+            if (elapsedTime < animationDuration) {
+                var progress = elapsedTime / animationDuration;
+                var easedProgress = progress * (2 - progress);
+                
+                var currentWidth = initialWidth + (targetWidth - initialWidth) * easedProgress;
+                var currentHeight = initialHeight + (targetHeight - initialHeight) * easedProgress;
+                
+                // Mantener la opacidad en 1 durante toda la animación
+                videoEntity.setAttribute('width', currentWidth);
+                videoEntity.setAttribute('height', currentHeight);
+                videoEntity.setAttribute('opacity', 1);
+                
+                // Reducir la opacidad del efecto de brillo
+                videoGlow.setAttribute('width', currentWidth);
+                videoGlow.setAttribute('height', currentHeight);
+                videoGlow.setAttribute('opacity', 0.1);
+                
+                expansionAnimation = requestAnimationFrame(animateExpansion);
+            } else {
+                videoEntity.setAttribute('width', targetWidth);
+                videoEntity.setAttribute('height', targetHeight);
+                videoEntity.setAttribute('opacity', 1);
+                videoGlow.setAttribute('width', targetWidth);
+                videoGlow.setAttribute('height', targetHeight);
+                videoGlow.setAttribute('opacity', 0.1);
+                
+                expansionAnimation = null;
+                startTime = null;
+                
+                showDebugInfo('✅ Animación de expansión completada');
+                
+                if (currentEffect === 'saturn') {
+                    animateSaturnRing();
+                } else if (currentEffect === 'stars') {
+                    createStars();
+                }
+            }
+        }
+        
+        // Función para animar el anillo de Saturno
+        function animateSaturnRing() {
+            if (!effectEnabled) return;
+            
+            // Ocultar las estrellas si estaban visibles
+            starsContainer.setAttribute('visible', false);
+            removeAllStars();
+            
+            // Mostrar el anillo de Saturno
+            saturnRing.setAttribute('visible', true);
+            saturnRingContainer.setAttribute('visible', true);
+            
+            // Configurar tamaño inicial del anillo (ajustar según necesidad)
+            saturnRing.setAttribute('radius', 0.5);
+            saturnRing.setAttribute('opacity', 0.8);
+            
+            // Iniciar la animación de expansión del anillo
+            ringStartTime = null;
+            ringExpansionAnimation = requestAnimationFrame(animateRingExpansion);
+            
+            showDebugInfo('🪐 Efecto de Anillo de Saturno activado');
+        }
+        
+        // Función para animar la expansión del anillo
+        function animateRingExpansion(timestamp) {
+            if (!ringStartTime) ringStartTime = timestamp;
+            var elapsedTime = timestamp - ringStartTime;
+            var explosionDuration = 3000; // 3 segundos
+            
+            if (elapsedTime < explosionDuration) {
+                // Calculamos el progreso de la animación (0 a 1)
+                var progress = elapsedTime / explosionDuration;
+                
+                // Función de easing para una expansión rápida al inicio y luego más lenta
+                var easedProgress = Math.pow(progress, 0.5);
+                
+                // Aumentamos el radio y disminuimos la opacidad
+                var currentRadius = 0.5 + 2.5 * easedProgress; // De 0.5 a 3.0
+                var currentOpacity = 0.8 - 0.8 * easedProgress; // De 0.8 a 0
+                
+                // Colores del anillo cambiantes
+                var hue = 270 + 180 * easedProgress; // De morado a cian
+                var currentColor = `hsl(${hue}, 100%, 60%)`;
+                
+                // Aplicar cambios
+                saturnRing.setAttribute('radius', currentRadius);
+                saturnRing.setAttribute('opacity', currentOpacity);
+                saturnRing.setAttribute('color', currentColor);
+                
+                // Animar también el grosor del tubo
+                var currentTube = 0.01 + 0.04 * easedProgress;
+                saturnRing.setAttribute('radius-tubular', currentTube);
+                
+                // Continuar animación
+                ringExpansionAnimation = requestAnimationFrame(animateRingExpansion);
+            } else {
+                // Ocultar el anillo al terminar
+                saturnRing.setAttribute('visible', false);
+                
+                // Detener animación
+                ringExpansionAnimation = null;
+                ringStartTime = null;
+                
+                showDebugInfo('✨ Explosión galáctica completada');
+            }
+        }
+        
+        // Función para crear estrellas alrededor del video
+        function createStars() {
+            if (!effectEnabled) return;
+            
+            // Ocultar anillo de Saturno
+            saturnRing.setAttribute('visible', false);
+            saturnRingContainer.setAttribute('visible', false);
+            
+            // Mostrar contenedor de estrellas
+            starsContainer.setAttribute('visible', true);
+            
+            // Limpiar estrellas anteriores
+            removeAllStars();
+            
+            // Obtener dimensiones actuales del video
+            var videoWidth = parseFloat(videoEntity.getAttribute('width'));
+            var videoHeight = parseFloat(videoEntity.getAttribute('height'));
+            
+            // Crear nuevas estrellas
+            for (let i = 0; i < maxStars; i++) {
+                createStar(videoWidth, videoHeight, i);
+            }
+            
+            showDebugInfo('⭐ Efecto de Estrellas activado');
+        }
+        
+        // Función para crear una estrella individual
+        function createStar(videoWidth, videoHeight, index) {
+            // Calcular posición aleatoria alrededor del video
+            var angle = Math.random() * Math.PI * 2;
+            var distanceFromBorder = 0.2 + Math.random() * 1.5; // Entre 0.2 y 1.7 unidades desde el borde
+            
+            // Calcular posición basada en el ángulo y la distancia
+            var posX, posY;
+            
+            // Posición más cercana al borde del video
+            var closestX = Math.cos(angle) * (videoWidth / 2);
+            var closestY = Math.sin(angle) * (videoHeight / 2);
+            
+            // Posición final = posición en el borde + distancia adicional en la misma dirección
+            posX = closestX + Math.cos(angle) * distanceFromBorder;
+            posY = closestY + Math.sin(angle) * distanceFromBorder;
+            
+            // Crear elemento de estrella
+            var star = document.createElement('a-entity');
+            
+            // Tamaño aleatorio
+            var size = 0.05 + Math.random() * 0.15;
+            
+            // Color aleatorio para las estrellas
+            var hue = Math.random() * 60 + 180; // Tonos azulados y verdosos
+            var saturation = 70 + Math.random() * 30;
+            var lightness = 70 + Math.random() * 30;
+            var color = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+            
+            // Configurar propiedades de la estrella
+            star.setAttribute('geometry', 'primitive: plane; width: ' + size + '; height: ' + size);
+            star.setAttribute('material', 'shader: flat; src: #star-texture; transparent: true; color: ' + color);
+            star.setAttribute('position', posX + ' ' + posY + ' 0.01');
+            
+            // Agregar animación de parpadeo
+            var duration = 1 + Math.random() * 3;
+            var delay = Math.random() * 2;
+            
+            star.setAttribute('animation', 'property: material.opacity; from: 0.9; to: 0.3; dur: ' + (duration * 1000) + 
+                             '; delay: ' + (delay * 1000) + '; dir: alternate; loop: true; easing: easeInOutSine');
+            
+            // Guardar referencia y agregar al contenedor
+            stars.push(star);
+            starsContainer.appendChild(star);
+            
+            // Agregar una animación de rotación suave para algunas estrellas
+            if (Math.random() > 0.5) {
+                star.setAttribute('animation__rotate', 'property: rotation.z; from: 0; to: 360; dur: ' + 
+                                 (5000 + Math.random() * 10000) + '; loop: true; easing: linear');
+            }
+        }
+        
+        // Función para eliminar todas las estrellas
+        function removeAllStars() {
+            for (let i = 0; i < stars.length; i++) {
+                if (stars[i].parentNode) {
+                    stars[i].parentNode.removeChild(stars[i]);
+                }
+            }
+            stars = [];
+        }
+        
+        // Función para activar el efecto de expansión
+        function triggerExpansionEffect() {
+            if (!effectEnabled) return;
+            
+            showDebugInfo('🔍 Iniciando efecto de expansión');
+            
+            // Cancelar cualquier animación en curso
+            if (expansionAnimation) {
+                cancelAnimationFrame(expansionAnimation);
+                expansionAnimation = null;
+                startTime = null;
+            }
+            
+            // Cancelar animaciones de efectos
+            if (ringExpansionAnimation) {
+                cancelAnimationFrame(ringExpansionAnimation);
+                ringExpansionAnimation = null;
+                ringStartTime = null;
+            }
+            
+            // Resetear el video a tamaño pequeño para la animación
+            videoEntity.setAttribute('width', initialWidth);
+            videoEntity.setAttribute('height', initialHeight);
+            videoEntity.setAttribute('opacity', 0.8);
+            
+            // Resetear el efecto de brillo al mismo tamaño
+            videoGlow.setAttribute('width', initialWidth);
+            videoGlow.setAttribute('height', initialHeight);
+            videoGlow.setAttribute('opacity', 0.3);
+            
+            // Ocultar efectos hasta que termine la expansión
+            saturnRing.setAttribute('visible', false);
+            starsContainer.setAttribute('visible', false);
+            
+            // Iniciar la nueva animación
+            expansionAnimation = requestAnimationFrame(animateExpansion);
+        }
+        
+        // Función para togglear el efecto
+        function toggleEffect() {
+            effectEnabled = !effectEnabled;
+            effectToggle.textContent = effectEnabled ? 'Desactivar Efecto' : 'Activar Efecto';
+            
+            if (!effectEnabled) {
+                // Si se desactiva, establecer tamaño completo inmediatamente
+                videoEntity.setAttribute('width', targetWidth);
+                videoEntity.setAttribute('height', targetHeight);
+                videoEntity.setAttribute('opacity', 1);
+                videoGlow.setAttribute('width', targetWidth);
+                videoGlow.setAttribute('height', targetHeight);
+                
+                // Ocultar efectos
+                saturnRing.setAttribute('visible', false);
+                starsContainer.setAttribute('visible', false);
+                
+                // Cancelar cualquier animación en curso
+                if (expansionAnimation) {
+                    cancelAnimationFrame(expansionAnimation);
+                    expansionAnimation = null;
+                    startTime = null;
+                }
+
+                if (ringExpansionAnimation) {
+                    cancelAnimationFrame(ringExpansionAnimation);
+                    ringExpansionAnimation = null;
+                    ringStartTime = null;
+                }
+                
+                removeAllStars();
+                
+                showDebugInfo('❌ Efectos desactivados');
+            } else {
+                showDebugInfo('✅ Efectos activados');
+                // Si el marcador ya está visible, activar el efecto inmediatamente
+                if (marker.object3D.visible) {
+                    triggerExpansionEffect();
+                }
+            }
+        }
+        
+        // Función para cambiar el tipo de efecto
+        function changeEffect() {
+            currentEffect = effectsSelector.value;
+            showDebugInfo('🔄 Cambiando a efecto: ' + currentEffect);
+            
+            // Si el marcador está visible y ya pasó la expansión, aplicar el efecto inmediatamente
+            if (marker.object3D.visible && !expansionAnimation && effectEnabled) {
+                if (currentEffect === 'saturn') {
+                    animateSaturnRing();
+                } else if (currentEffect === 'stars') {
+                    createStars();
+                }
+            }
+        }
+        
+        // Función para cargar y reproducir un video específico
+        function loadAndPlayVideo(videoSrc) {
+            // Pausar el video actual si se está reproduciendo
+            if (!video.paused) {
+                video.pause();
+            }
+            
+            showDebugInfo('🔄 Cambiando a video: ' + videoSrc);
+            
+            // Establecer la nueva fuente
+            video.src = videoSrc;
+            
+            // Cargar el nuevo video
+            video.load();
+            
+            // Reproducir después de cargar
+            video.onloadeddata = function() {
+                showDebugInfo('✅ Nuevo video cargado');
+                video.play().then(function() {
+                    showDebugInfo('▶️ Reproduciendo nuevo video');
+                    
+                    // Si el marcador está visible, activar la animación
+                    if (marker.object3D.visible && effectEnabled) {
+                        triggerExpansionEffect();
+                    }
+                }).catch(function(error) {
+                    showDebugInfo('❌ Error al reproducir nuevo video: ' + error.message);
+                    
+                    // Si es el video local y falla, intentamos con un video alternativo
+                    if (videoSrc === 'video.mp4') {
+                        showDebugInfo('⚠️ El video local falló, probando alternativo');
+                        loadAndPlayVideo(videos[1]); // Cargar el primer video alternativo
+                        videoSelector.selectedIndex = 1; // Actualizar el selector
+                        currentVideoIndex = 1;
+                    }
+                });
+            };
+            
+            // Capturar errores al cargar
+            video.onerror = function() {
+                showDebugInfo('❌ Error al cargar video: ' + videoSrc);
+                
+                // Si es el video local y falla, intentamos con un video alternativo
+                if (videoSrc === 'video.mp4') {
+                    showDebugInfo('⚠️ El video local falló, probando alternativo');
+                    loadAndPlayVideo(videos[1]); // Cargar el primer video alternativo
+                    videoSelector.selectedIndex = 1; // Actualizar el selector
+                    currentVideoIndex = 1;
+                }
+            };
+        }
+        
+        // Función para cambiar al siguiente video
+        function nextVideo() {
+            currentVideoIndex = (currentVideoIndex + 1) % videos.length;
+            videoSelector.selectedIndex = currentVideoIndex;
+            loadAndPlayVideo(videos[currentVideoIndex]);
+        }
+        
+        // Función para cambiar al video anterior
+        function prevVideo() {
+            currentVideoIndex = (currentVideoIndex - 1 + videos.length) % videos.length;
+            videoSelector.selectedIndex = currentVideoIndex;
+            loadAndPlayVideo(videos[currentVideoIndex]);
+        }
+        
+        // Función para detectar si es un dispositivo móvil
+        function isMobileDevice() {
+            return (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf("IEMobile") !== -1);
+        }
+        
+        // Modificar la función de inicio para ajustar según el dispositivo
+        playButton.addEventListener('click', function() {
+            // Mostrar controles de video y efecto
+            videoControls.style.display = 'block';
+            effectToggle.style.display = 'block';
+            effectsSelector.style.display = 'block';
+            
+            // Ajustar el tamaño de los elementos según el dispositivo
+            if (isMobileDevice()) {
+                videoEntity.setAttribute('width', initialWidth);
+                videoEntity.setAttribute('height', initialHeight);
+                videoGlow.setAttribute('width', initialWidth);
+                videoGlow.setAttribute('height', initialHeight);
+            }
+            
+            // Intentar cargar el primer video seleccionado
+            var initialVideo = videoSelector.value;
+            loadAndPlayVideo(initialVideo);
+            
+            // Ocultar el botón después de hacer clic
+            this.style.display = 'none';
+        });
+        
+        // Eventos del marcador
+        marker.addEventListener('markerFound', function() {
+            showDebugInfo('🎯 Marcador encontrado');
+            
+            // Asegurar que el video esté reproduciendo cuando se encuentra el marcador
+            if (video.paused && video.readyState >= 2) {
+                video.play().catch(e => showDebugInfo('❌ Error al reproducir en marcador: ' + e.message));
+            }
+            
+            infoDiv.textContent = "¡Marcador encontrado! Mostrando video con efecto.";
+            
+            // Activar el efecto de expansión
+            if (effectEnabled) {
+                triggerExpansionEffect();
+            }
+        });
+        
+        marker.addEventListener('markerLost', function() {
+            showDebugInfo('🔍 Marcador perdido');
+            infoDiv.textContent = "Marcador perdido. Muestra el marcador Hiro a la cámara.";
+        });
+        
+        // Eventos para el selector de videos y botones
+        videoSelector.addEventListener('change', function() {
+            currentVideoIndex = this.selectedIndex;
+            loadAndPlayVideo(this.value);
+        });
+        
+        prevVideoBtn.addEventListener('click', prevVideo);
+        nextVideoBtn.addEventListener('click', nextVideo);
+        
+        // Botón para activar/desactivar efecto
+        effectToggle.addEventListener('click', toggleEffect);
+        
+        // Selector de efectos
+        effectsSelector.addEventListener('change', changeEffect);
+        
+        // Establecer texto inicial del botón de efecto
+        effectToggle.textContent = effectEnabled ? 'Desactivar Efecto' : 'Activar Efecto';
+        
+        // Comprobar CORS y permisos
+        if (window.location.protocol === 'file:') {
+            showDebugInfo('⚠️ Ejecutando desde archivo local (recomendado usar servidor)');
+        } else {
+            showDebugInfo('✅ Ejecutando desde servidor: ' + window.location.href);
+        }
+        
+        // Verificar formato del navegador
+        showDebugInfo('🌐 Navegador: ' + navigator.userAgent.substring(0, 50) + '...');
+        
+        // Añadir detección de orientación del dispositivo
+        window.addEventListener('orientationchange', function() {
+            // Recalcular tamaños cuando cambia la orientación
+            initialWidth = window.innerWidth <= 768 ? 0.08 : 0.1;
+            initialHeight = window.innerWidth <= 768 ? 0.06 : 0.075;
+            targetWidth = window.innerWidth <= 768 ? 2 : 3;
+            targetHeight = window.innerWidth <= 768 ? 1.5 : 2.25;
+            
+            // Reajustar el video si está visible
+            if (marker.object3D.visible) {
+                videoEntity.setAttribute('width', initialWidth);
+                videoEntity.setAttribute('height', initialHeight);
+                videoGlow.setAttribute('width', initialWidth);
+                videoGlow.setAttribute('height', initialHeight);
+            }
+        });
+    </script>
+</body>
+</html>
