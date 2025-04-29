@@ -143,10 +143,10 @@
     
     <div id="video-controls">
         <select id="video-selector">
-            <option value="/video.mp4">Mi Video Local</option>
-            <option value="/video2.mp4">Video Alternativo 1</option>
-            <option value="/video3.mp4">Video Alternativo 2</option>
-            <option value="/video4.mp4">Video Alternativo 3</option>
+            <option value="./video.mp4">Mi Video Local</option>
+            <option value="./video2.mp4">Video Alternativo 1</option>
+            <option value="./video3.mp4">Video Alternativo 2</option>
+            <option value="./video4.mp4">Video Alternativo 3</option>
         </select>
         <button id="prev-video" class="control-button">&lt;</button>
         <button id="next-video" class="control-button">&gt;</button>
@@ -159,7 +159,6 @@
         </a-assets>
         
         <a-marker preset="hiro" id="marker-hiro">
-            <!-- Video sin animaciones, las manejaremos por JavaScript -->
             <a-video 
                 id="video-entity"
                 src="#mivideo" 
@@ -170,7 +169,6 @@
                 opacity="1">
             </a-video>
             
-            <!-- Efecto de estela tipo anillo de Saturno -->
             <a-entity id="saturn-ring-container" position="0 0.49 0" rotation="-90 0 0">
                 <a-torus 
                     id="saturn-ring" 
@@ -185,9 +183,7 @@
                 </a-torus>
             </a-entity>
             
-            <!-- Contenedor para las estrellas -->
             <a-entity id="stars-container" position="0 0.49 0" rotation="-90 0 0" visible="false">
-                <!-- Las estrellas se crearán dinámicamente -->
             </a-entity>
             
             <a-plane 
@@ -206,53 +202,57 @@
     </a-scene>
     
     <script>
+        // Configuración del entorno
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const isNetlify = window.location.hostname.includes('netlify.app');
+        const baseUrl = isLocal ? window.location.origin + '/' : isNetlify ? window.location.origin + '/' : '/';
+        
         // Referencias a elementos
-        var playButton = document.getElementById('play-button');
-        var video = document.getElementById('mivideo');
-        var videoEntity = document.getElementById('video-entity');
-        var videoGlow = document.getElementById('video-glow');
-        var marker = document.querySelector('#marker-hiro');
-        var infoDiv = document.querySelector('.info');
-        var debugDiv = document.getElementById('debug-info');
-        var videoControls = document.getElementById('video-controls');
-        var videoSelector = document.getElementById('video-selector');
-        var prevVideoBtn = document.getElementById('prev-video');
-        var nextVideoBtn = document.getElementById('next-video');
-        var effectToggle = document.getElementById('effect-toggle');
-        var effectsSelector = document.getElementById('effects-selector');
-        var saturnRing = document.getElementById('saturn-ring');
-        var saturnRingContainer = document.getElementById('saturn-ring-container');
-        var starsContainer = document.getElementById('stars-container');
+        const playButton = document.getElementById('play-button');
+        const video = document.getElementById('mivideo');
+        const videoEntity = document.getElementById('video-entity');
+        const videoGlow = document.getElementById('video-glow');
+        const marker = document.querySelector('#marker-hiro');
+        const infoDiv = document.querySelector('.info');
+        const debugDiv = document.getElementById('debug-info');
+        const videoControls = document.getElementById('video-controls');
+        const videoSelector = document.getElementById('video-selector');
+        const prevVideoBtn = document.getElementById('prev-video');
+        const nextVideoBtn = document.getElementById('next-video');
+        const effectToggle = document.getElementById('effect-toggle');
+        const effectsSelector = document.getElementById('effects-selector');
+        const saturnRing = document.getElementById('saturn-ring');
+        const saturnRingContainer = document.getElementById('saturn-ring-container');
+        const starsContainer = document.getElementById('stars-container');
         
         // Estado del efecto
-        var effectEnabled = true;
-        var currentEffect = 'saturn'; // 'saturn' o 'stars'
+        let effectEnabled = true;
+        let currentEffect = 'saturn';
         
         // Array de videos disponibles
-        var videos = Array.from(videoSelector.options).map(option => option.value);
-        var currentVideoIndex = 0;
+        const videos = Array.from(videoSelector.options).map(option => option.value);
+        let currentVideoIndex = 0;
         
         // Variables para la animación
-        var expansionAnimation = null;
-        var startTime = null;
-        var initialWidth = window.innerWidth <= 768 ? 0.08 : 0.1;
-        var initialHeight = window.innerWidth <= 768 ? 0.06 : 0.075;
-        var targetWidth = window.innerWidth <= 768 ? 2 : 3;
-        var targetHeight = window.innerWidth <= 768 ? 1.5 : 2.25;
-        var animationDuration = 1500; // 1.5 segundos
+        let expansionAnimation = null;
+        let startTime = null;
+        let initialWidth = window.innerWidth <= 768 ? 0.08 : 0.1;
+        let initialHeight = window.innerWidth <= 768 ? 0.06 : 0.075;
+        let targetWidth = window.innerWidth <= 768 ? 2 : 3;
+        let targetHeight = window.innerWidth <= 768 ? 1.5 : 2.25;
+        const animationDuration = 1500;
         
         // Variables para efectos especiales
-        var ringExpansionAnimation = null;
-        var ringStartTime = null;
-        var stars = [];
-        var maxStars = 50;
+        let ringExpansionAnimation = null;
+        let ringStartTime = null;
+        let stars = [];
+        let maxStars = 50;
         
         // Función para mostrar información de depuración
         function showDebugInfo(msg) {
             debugDiv.innerHTML += msg + '<br>';
             console.log(msg);
-            // Limitamos a las últimas 5 líneas
-            var lines = debugDiv.innerHTML.split('<br>');
+            const lines = debugDiv.innerHTML.split('<br>');
             if (lines.length > 5) {
                 debugDiv.innerHTML = lines.slice(lines.length - 5).join('<br>');
             }
@@ -552,10 +552,11 @@
             }
         }
         
-        // Función para verificar si estamos en un entorno local
+        // Función para verificar si estamos en un entorno local o Netlify
         function isLocalEnvironment() {
             return window.location.hostname === 'localhost' || 
-                   window.location.hostname === '127.0.0.1';
+                   window.location.hostname === '127.0.0.1' ||
+                   window.location.hostname.includes('netlify.app');
         }
         
         // Función para obtener la URL base correcta
@@ -604,7 +605,7 @@
             
             // Cargar el primer video
             var initialVideo = videoSelector.value;
-            loadAndPlayVideo(initialVideo);
+            await loadAndPlayVideo(initialVideo);
             
             // Ocultar el botón
             this.style.display = 'none';
@@ -689,7 +690,7 @@
         });
         
         // Modificar la función loadAndPlayVideo para usar la URL base correcta
-        function loadAndPlayVideo(videoSrc) {
+        async function loadAndPlayVideo(videoSrc) {
             if (!video.paused) {
                 video.pause();
             }
@@ -699,31 +700,19 @@
             
             showDebugInfo('🔄 Cambiando a video: ' + fullVideoSrc);
             
-            video.src = fullVideoSrc;
-            video.load();
-            
-            video.onloadeddata = function() {
+            try {
+                video.src = fullVideoSrc;
+                await video.load();
                 showDebugInfo('✅ Nuevo video cargado');
-                video.play().then(function() {
-                    showDebugInfo('▶️ Reproduciendo nuevo video');
-                    
-                    if (marker.object3D.visible && effectEnabled) {
-                        triggerExpansionEffect();
-                    }
-                }).catch(function(error) {
-                    showDebugInfo('❌ Error al reproducir nuevo video: ' + error.message);
-                    
-                    if (videoSrc === 'video.mp4') {
-                        showDebugInfo('⚠️ El video local falló, probando alternativo');
-                        loadAndPlayVideo(videos[1]);
-                        videoSelector.selectedIndex = 1;
-                        currentVideoIndex = 1;
-                    }
-                });
-            };
-            
-            video.onerror = function() {
-                showDebugInfo('❌ Error al cargar video: ' + fullVideoSrc);
+                
+                await video.play();
+                showDebugInfo('▶️ Reproduciendo nuevo video');
+                
+                if (marker.object3D.visible && effectEnabled) {
+                    triggerExpansionEffect();
+                }
+            } catch (error) {
+                showDebugInfo('❌ Error al reproducir nuevo video: ' + error.message);
                 
                 if (videoSrc === 'video.mp4') {
                     showDebugInfo('⚠️ El video local falló, probando alternativo');
@@ -731,7 +720,7 @@
                     videoSelector.selectedIndex = 1;
                     currentVideoIndex = 1;
                 }
-            };
+            }
         }
         
         // Función para cambiar al siguiente video
