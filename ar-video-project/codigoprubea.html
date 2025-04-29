@@ -552,53 +552,62 @@
             }
         }
         
-        // Función para cargar y reproducir un video específico
+        // Función para verificar si estamos en un entorno local o en producción
+        function isLocalEnvironment() {
+            return window.location.hostname === 'localhost' || 
+                   window.location.hostname === '127.0.0.1';
+        }
+        
+        // Función para obtener la URL base correcta
+        function getBaseUrl() {
+            if (isLocalEnvironment()) {
+                return '/ar-video-project/';
+            } else {
+                return '/';
+            }
+        }
+        
+        // Modificar la función loadAndPlayVideo para usar la URL base correcta
         function loadAndPlayVideo(videoSrc) {
-            // Pausar el video actual si se está reproduciendo
-            if (!video.paused) {
+            if (video.paused) {
                 video.pause();
             }
             
-            showDebugInfo('🔄 Cambiando a video: ' + videoSrc);
+            // Construir la URL completa del video
+            var fullVideoSrc = getBaseUrl() + videoSrc;
             
-            // Establecer la nueva fuente
-            video.src = videoSrc;
+            showDebugInfo('🔄 Cambiando a video: ' + fullVideoSrc);
             
-            // Cargar el nuevo video
+            video.src = fullVideoSrc;
             video.load();
             
-            // Reproducir después de cargar
             video.onloadeddata = function() {
                 showDebugInfo('✅ Nuevo video cargado');
                 video.play().then(function() {
                     showDebugInfo('▶️ Reproduciendo nuevo video');
                     
-                    // Si el marcador está visible, activar la animación
                     if (marker.object3D.visible && effectEnabled) {
                         triggerExpansionEffect();
                     }
                 }).catch(function(error) {
                     showDebugInfo('❌ Error al reproducir nuevo video: ' + error.message);
                     
-                    // Si es el video local y falla, intentamos con un video alternativo
                     if (videoSrc === 'video.mp4') {
                         showDebugInfo('⚠️ El video local falló, probando alternativo');
-                        loadAndPlayVideo(videos[1]); // Cargar el primer video alternativo
-                        videoSelector.selectedIndex = 1; // Actualizar el selector
+                        loadAndPlayVideo(videos[1]);
+                        videoSelector.selectedIndex = 1;
                         currentVideoIndex = 1;
                     }
                 });
             };
             
-            // Capturar errores al cargar
             video.onerror = function() {
-                showDebugInfo('❌ Error al cargar video: ' + videoSrc);
+                showDebugInfo('❌ Error al cargar video: ' + fullVideoSrc);
                 
-                // Si es el video local y falla, intentamos con un video alternativo
                 if (videoSrc === 'video.mp4') {
                     showDebugInfo('⚠️ El video local falló, probando alternativo');
-                    loadAndPlayVideo(videos[1]); // Cargar el primer video alternativo
-                    videoSelector.selectedIndex = 1; // Actualizar el selector
+                    loadAndPlayVideo(videos[1]);
+                    videoSelector.selectedIndex = 1;
                     currentVideoIndex = 1;
                 }
             };
@@ -622,6 +631,33 @@
         function isMobileDevice() {
             return (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf("IEMobile") !== -1);
         }
+        
+        // Añadir detección de dispositivo móvil y ajustes
+        function setupMobileOptimizations() {
+            if (isMobileDevice()) {
+                showDebugInfo('📱 Dispositivo móvil detectado');
+                
+                // Ajustar tamaños para móviles
+                initialWidth = 0.08;
+                initialHeight = 0.06;
+                targetWidth = 2;
+                targetHeight = 1.5;
+                
+                // Ajustar la interfaz para móviles
+                document.querySelector('.info').style.fontSize = '16px';
+                document.querySelector('.info').style.padding = '10px';
+                
+                // Optimizar para pantallas táctiles
+                document.body.style.touchAction = 'none';
+            }
+        }
+        
+        // Llamar a la configuración de móvil al cargar
+        window.addEventListener('load', function() {
+            setupMobileOptimizations();
+            showDebugInfo('🌐 URL actual: ' + window.location.href);
+            showDebugInfo('📱 Es móvil: ' + isMobileDevice());
+        });
         
         // Modificar la función de inicio para ajustar según el dispositivo
         playButton.addEventListener('click', function() {
