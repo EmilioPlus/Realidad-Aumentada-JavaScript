@@ -552,7 +552,7 @@
             }
         }
         
-        // Función para verificar si estamos en un entorno local o en producción
+        // Función para verificar si estamos en un entorno local
         function isLocalEnvironment() {
             return window.location.hostname === 'localhost' || 
                    window.location.hostname === '127.0.0.1';
@@ -561,15 +561,136 @@
         // Función para obtener la URL base correcta
         function getBaseUrl() {
             if (isLocalEnvironment()) {
-                return '/ar-video-project/';
+                return window.location.origin + '/';
             } else {
                 return '/';
             }
         }
         
+        // Función para verificar permisos de cámara
+        async function checkCameraPermissions() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                stream.getTracks().forEach(track => track.stop());
+                showDebugInfo('✅ Permisos de cámara concedidos');
+                return true;
+            } catch (error) {
+                showDebugInfo('❌ Error al acceder a la cámara: ' + error.message);
+                return false;
+            }
+        }
+        
+        // Modificar la función de inicio para incluir verificación de cámara
+        playButton.addEventListener('click', async function() {
+            // Verificar permisos de cámara
+            const hasCameraAccess = await checkCameraPermissions();
+            if (!hasCameraAccess) {
+                alert('Por favor, permite el acceso a la cámara para usar la realidad aumentada');
+                return;
+            }
+            
+            // Mostrar controles
+            videoControls.style.display = 'block';
+            effectToggle.style.display = 'block';
+            effectsSelector.style.display = 'block';
+            
+            // Ajustar según el dispositivo
+            if (isMobileDevice()) {
+                videoEntity.setAttribute('width', initialWidth);
+                videoEntity.setAttribute('height', initialHeight);
+                videoGlow.setAttribute('width', initialWidth);
+                videoGlow.setAttribute('height', initialHeight);
+            }
+            
+            // Cargar el primer video
+            var initialVideo = videoSelector.value;
+            loadAndPlayVideo(initialVideo);
+            
+            // Ocultar el botón
+            this.style.display = 'none';
+        });
+        
+        // Eventos del marcador
+        marker.addEventListener('markerFound', function() {
+            showDebugInfo('🎯 Marcador encontrado');
+            
+            // Asegurar que el video esté reproduciendo cuando se encuentra el marcador
+            if (video.paused && video.readyState >= 2) {
+                video.play().catch(e => showDebugInfo('❌ Error al reproducir en marcador: ' + e.message));
+            }
+            
+            infoDiv.textContent = "¡Marcador encontrado! Mostrando video con efecto.";
+            
+            // Activar el efecto de expansión
+            if (effectEnabled) {
+                triggerExpansionEffect();
+            }
+        });
+        
+        marker.addEventListener('markerLost', function() {
+            showDebugInfo('🔍 Marcador perdido');
+            infoDiv.textContent = "Marcador perdido. Muestra el marcador Hiro a la cámara.";
+        });
+        
+        // Eventos para el selector de videos y botones
+        videoSelector.addEventListener('change', function() {
+            currentVideoIndex = this.selectedIndex;
+            loadAndPlayVideo(this.value);
+        });
+        
+        prevVideoBtn.addEventListener('click', prevVideo);
+        nextVideoBtn.addEventListener('click', nextVideo);
+        
+        // Botón para activar/desactivar efecto
+        effectToggle.addEventListener('click', toggleEffect);
+        
+        // Selector de efectos
+        effectsSelector.addEventListener('change', changeEffect);
+        
+        // Establecer texto inicial del botón de efecto
+        effectToggle.textContent = effectEnabled ? 'Desactivar Efecto' : 'Activar Efecto';
+        
+        // Comprobar CORS y permisos
+        if (window.location.protocol === 'file:') {
+            showDebugInfo('⚠️ Ejecutando desde archivo local (recomendado usar servidor)');
+        } else {
+            showDebugInfo('✅ Ejecutando desde servidor: ' + window.location.href);
+        }
+        
+        // Verificar formato del navegador
+        showDebugInfo('🌐 Navegador: ' + navigator.userAgent.substring(0, 50) + '...');
+        
+        // Añadir detección de orientación del dispositivo
+        window.addEventListener('orientationchange', function() {
+            // Recalcular tamaños cuando cambia la orientación
+            initialWidth = window.innerWidth <= 768 ? 0.08 : 0.1;
+            initialHeight = window.innerWidth <= 768 ? 0.06 : 0.075;
+            targetWidth = window.innerWidth <= 768 ? 2 : 3;
+            targetHeight = window.innerWidth <= 768 ? 1.5 : 2.25;
+            
+            // Reajustar el video si está visible
+            if (marker.object3D.visible) {
+                videoEntity.setAttribute('width', initialWidth);
+                videoEntity.setAttribute('height', initialHeight);
+                videoGlow.setAttribute('width', initialWidth);
+                videoGlow.setAttribute('height', initialHeight);
+            }
+        });
+        
+        // Añadir detección de entorno local
+        window.addEventListener('load', function() {
+            if (isLocalEnvironment()) {
+                showDebugInfo('🏠 Ejecutando en servidor local');
+                showDebugInfo('🌐 URL base: ' + getBaseUrl());
+            }
+            
+            setupMobileOptimizations();
+            showDebugInfo('📱 Es móvil: ' + isMobileDevice());
+        });
+        
         // Modificar la función loadAndPlayVideo para usar la URL base correcta
         function loadAndPlayVideo(videoSrc) {
-            if (video.paused) {
+            if (!video.paused) {
                 video.pause();
             }
             
@@ -651,103 +772,6 @@
                 document.body.style.touchAction = 'none';
             }
         }
-        
-        // Llamar a la configuración de móvil al cargar
-        window.addEventListener('load', function() {
-            setupMobileOptimizations();
-            showDebugInfo('🌐 URL actual: ' + window.location.href);
-            showDebugInfo('📱 Es móvil: ' + isMobileDevice());
-        });
-        
-        // Modificar la función de inicio para ajustar según el dispositivo
-        playButton.addEventListener('click', function() {
-            // Mostrar controles de video y efecto
-            videoControls.style.display = 'block';
-            effectToggle.style.display = 'block';
-            effectsSelector.style.display = 'block';
-            
-            // Ajustar el tamaño de los elementos según el dispositivo
-            if (isMobileDevice()) {
-                videoEntity.setAttribute('width', initialWidth);
-                videoEntity.setAttribute('height', initialHeight);
-                videoGlow.setAttribute('width', initialWidth);
-                videoGlow.setAttribute('height', initialHeight);
-            }
-            
-            // Intentar cargar el primer video seleccionado
-            var initialVideo = videoSelector.value;
-            loadAndPlayVideo(initialVideo);
-            
-            // Ocultar el botón después de hacer clic
-            this.style.display = 'none';
-        });
-        
-        // Eventos del marcador
-        marker.addEventListener('markerFound', function() {
-            showDebugInfo('🎯 Marcador encontrado');
-            
-            // Asegurar que el video esté reproduciendo cuando se encuentra el marcador
-            if (video.paused && video.readyState >= 2) {
-                video.play().catch(e => showDebugInfo('❌ Error al reproducir en marcador: ' + e.message));
-            }
-            
-            infoDiv.textContent = "¡Marcador encontrado! Mostrando video con efecto.";
-            
-            // Activar el efecto de expansión
-            if (effectEnabled) {
-                triggerExpansionEffect();
-            }
-        });
-        
-        marker.addEventListener('markerLost', function() {
-            showDebugInfo('🔍 Marcador perdido');
-            infoDiv.textContent = "Marcador perdido. Muestra el marcador Hiro a la cámara.";
-        });
-        
-        // Eventos para el selector de videos y botones
-        videoSelector.addEventListener('change', function() {
-            currentVideoIndex = this.selectedIndex;
-            loadAndPlayVideo(this.value);
-        });
-        
-        prevVideoBtn.addEventListener('click', prevVideo);
-        nextVideoBtn.addEventListener('click', nextVideo);
-        
-        // Botón para activar/desactivar efecto
-        effectToggle.addEventListener('click', toggleEffect);
-        
-        // Selector de efectos
-        effectsSelector.addEventListener('change', changeEffect);
-        
-        // Establecer texto inicial del botón de efecto
-        effectToggle.textContent = effectEnabled ? 'Desactivar Efecto' : 'Activar Efecto';
-        
-        // Comprobar CORS y permisos
-        if (window.location.protocol === 'file:') {
-            showDebugInfo('⚠️ Ejecutando desde archivo local (recomendado usar servidor)');
-        } else {
-            showDebugInfo('✅ Ejecutando desde servidor: ' + window.location.href);
-        }
-        
-        // Verificar formato del navegador
-        showDebugInfo('🌐 Navegador: ' + navigator.userAgent.substring(0, 50) + '...');
-        
-        // Añadir detección de orientación del dispositivo
-        window.addEventListener('orientationchange', function() {
-            // Recalcular tamaños cuando cambia la orientación
-            initialWidth = window.innerWidth <= 768 ? 0.08 : 0.1;
-            initialHeight = window.innerWidth <= 768 ? 0.06 : 0.075;
-            targetWidth = window.innerWidth <= 768 ? 2 : 3;
-            targetHeight = window.innerWidth <= 768 ? 1.5 : 2.25;
-            
-            // Reajustar el video si está visible
-            if (marker.object3D.visible) {
-                videoEntity.setAttribute('width', initialWidth);
-                videoEntity.setAttribute('height', initialHeight);
-                videoGlow.setAttribute('width', initialWidth);
-                videoGlow.setAttribute('height', initialHeight);
-            }
-        });
     </script>
 </body>
 </html>
