@@ -1,8 +1,9 @@
+
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Video en Realidad Aumentada con Efectos Galácticos</title>
     <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
@@ -10,7 +11,10 @@
         body {
             margin: 0;
             overflow: hidden;
-            touch-action: none; /* Evita gestos no deseados en móviles */
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
         .info {
             position: fixed;
@@ -22,11 +26,12 @@
             z-index: 10;
             padding: 10px;
             font-family: Arial, sans-serif;
-            font-size: clamp(14px, 4vw, 18px); /* Tamaño de texto responsivo */
+            font-size: clamp(14px, 4vw, 18px);
+            box-sizing: border-box;
         }
         #play-button {
             position: fixed;
-            bottom: 20px;
+            bottom: 20%;
             left: 50%;
             transform: translateX(-50%);
             z-index: 100;
@@ -37,11 +42,12 @@
             border-radius: 5px;
             font-size: clamp(16px, 5vw, 20px);
             cursor: pointer;
-            min-width: 200px; /* Tamaño mínimo para facilitar el toque */
+            min-width: 200px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
         }
         #debug-info {
             position: fixed;
-            bottom: 70px;
+            bottom: 10px;
             left: 10px;
             background-color: rgba(0,0,0,0.7);
             color: white;
@@ -49,84 +55,125 @@
             font-family: monospace;
             font-size: clamp(10px, 3vw, 12px);
             z-index: 100;
-            max-height: 100px;
+            max-height: 80px;
             overflow-y: auto;
-        }
-        #video-controls {
-            position: fixed;
-            bottom: 20px;
-            right: 10px;
-            z-index: 100;
-            background-color: rgba(0,0,0,0.7);
-            padding: 10px;
             border-radius: 5px;
+            max-width: 90%;
+        }
+        .mobile-controls-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(0,0,0,0.7);
+            z-index: 100;
             display: none;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        .mobile-control-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
         }
         #video-selector {
-            margin-bottom: 10px;
-            padding: 8px;
             width: 100%;
-            font-size: clamp(14px, 4vw, 16px);
+            padding: 12px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: none;
+            margin-bottom: 10px;
+            background-color: #333;
+            color: white;
         }
         .control-button {
             background-color: #4CAF50;
             color: white;
             border: none;
             border-radius: 5px;
-            padding: 8px 16px;
+            padding: 12px 24px;
             margin: 0 5px;
             cursor: pointer;
             min-width: 40px;
-            font-size: clamp(14px, 4vw, 16px);
+            font-size: 16px;
+            flex-grow: 1;
+        }
+        #prev-video, #next-video {
+            width: 48%;
+            padding: 12px 5px;
         }
         #effect-toggle {
-            position: fixed;
-            bottom: 20px;
-            left: 10px;
-            z-index: 100;
-            padding: 10px 20px;
             background-color: #2196F3;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            display: none;
-            min-width: 120px;
-            font-size: clamp(14px, 4vw, 16px);
+            width: 48%;
         }
         #effects-selector {
-            position: fixed;
-            bottom: 60px;
-            left: 10px;
-            z-index: 100;
-            padding: 8px;
-            background-color: rgba(0,0,0,0.7);
-            color: white;
-            border: none;
+            width: 100%;
+            padding: 12px;
             border-radius: 5px;
-            cursor: pointer;
-            display: none;
-            min-width: 150px;
-            font-size: clamp(14px, 4vw, 16px);
+            border: none;
+            background-color: #333;
+            color: white;
+            font-size: 16px;
         }
-        /* Media query para dispositivos móviles */
+        .desktop-controls {
+            display: none;
+        }
+        
+        /* Media queries para dispositivos móviles */
         @media (max-width: 768px) {
-            #video-entity {
-                width: 0.08 !important; /* Tamaño más pequeño para móviles */
-                height: 0.06 !important;
+            .mobile-controls-container {
+                padding-bottom: env(safe-area-inset-bottom, 10px);
             }
-            #video-glow {
-                width: 0.08 !important;
-                height: 0.06 !important;
+            #play-button {
+                padding: 20px 30px;
+                font-size: 18px;
             }
-            .initialWidth {
-                width: 0.08 !important;
-                height: 0.06 !important;
+            .info {
+                padding: 10px;
+                padding-top: max(10px, env(safe-area-inset-top));
             }
-            .targetWidth {
-                width: 2 !important; /* Tamaño máximo más pequeño para móviles */
-                height: 1.5 !important;
+            .control-button, #video-selector, #effects-selector {
+                font-size: 16px;
+                padding: 15px;
             }
+        }
+        
+        /* Estilos para dispositivos muy pequeños */
+        @media (max-width: 375px) {
+            .control-button {
+                padding: 12px 5px;
+            }
+            .info {
+                font-size: 14px;
+            }
+        }
+        
+        /* Soporte para notch en iPhones */
+        @supports (padding-top: env(safe-area-inset-top)) {
+            .info {
+                padding-top: env(safe-area-inset-top);
+            }
+            .mobile-controls-container {
+                padding-bottom: env(safe-area-inset-bottom, 10px);
+            }
+        }
+
+        #marker-lost-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0,0,0,0.8);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            text-align: center;
+            z-index: 50;
+            display: none;
+            max-width: 80%;
         }
     </style>
 </head>
@@ -134,28 +181,54 @@
     <div class="info">Muestra el marcador Hiro a la cámara para ver el video con efectos galácticos</div>
     <button id="play-button">Iniciar AR y Video</button>
     <div id="debug-info"></div>
-    <button id="effect-toggle">Desactivar Efecto</button>
+    <div id="marker-lost-message">Marcador perdido. Acerca el marcador a la cámara</div>
     
-    <select id="effects-selector">
-        <option value="saturn">Estela de Saturno</option>
-        <option value="stars">Estrellas Galácticas</option>
-    </select>
-    
-    <div id="video-controls">
+    <!-- Controles para móviles (adaptados) -->
+    <div class="mobile-controls-container" id="mobile-controls">
         <select id="video-selector">
             <option value="./video.mp4">Mi Video Local</option>
             <option value="./video2.mp4">Video Alternativo 1</option>
             <option value="./video3.mp4">Video Alternativo 2</option>
             <option value="./video4.mp4">Video Alternativo 3</option>
         </select>
-        <button id="prev-video" class="control-button">&lt;</button>
-        <button id="next-video" class="control-button">&gt;</button>
+        
+        <div class="mobile-control-row">
+            <button id="prev-video" class="control-button">&#9664; Anterior</button>
+            <button id="next-video" class="control-button">Siguiente &#9654;</button>
+        </div>
+        
+        <div class="mobile-control-row">
+            <button id="effect-toggle" class="control-button">Efectos ON</button>
+            <select id="effects-selector" class="control-button">
+                <option value="saturn">Anillo de Saturno</option>
+                <option value="stars">Estrellas Galácticas</option>
+            </select>
+        </div>
     </div>
     
-    <a-scene embedded arjs='sourceType: webcam; debugUIEnabled: false;' vr-mode-ui="enabled: false">
+    <!-- Controles para desktop (originales) -->
+    <div class="desktop-controls">
+        <button id="effect-toggle-desktop">Desactivar Efecto</button>
+        <select id="effects-selector-desktop">
+            <option value="saturn">Estela de Saturno</option>
+            <option value="stars">Estrellas Galácticas</option>
+        </select>
+        <div id="video-controls-desktop">
+            <select id="video-selector-desktop">
+                <option value="./video.mp4">Mi Video Local</option>
+                <option value="./video2.mp4">Video Alternativo 1</option>
+                <option value="./video3.mp4">Video Alternativo 2</option>
+                <option value="./video4.mp4">Video Alternativo 3</option>
+            </select>
+            <button id="prev-video-desktop" class="control-button">&lt;</button>
+            <button id="next-video-desktop" class="control-button">&gt;</button>
+        </div>
+    </div>
+    
+    <a-scene embedded arjs='sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3; sourceWidth: 1280; sourceHeight: 960;' vr-mode-ui="enabled: false" renderer="antialias: true; logarithmicDepthBuffer: true;">
         <a-assets>
             <video id="mivideo" crossorigin="anonymous" playsinline webkit-playsinline muted loop></video>
-            <img id="star-texture" src="data:image/png;base64,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" />
+            <img id="star-texture" src="data:image/png;base64,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" />
         </a-assets>
         
         <a-marker preset="hiro" id="marker-hiro">
@@ -206,7 +279,7 @@
         const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
         const isNetlify = window.location.hostname.includes('netlify.app');
         const baseUrl = isLocal ? window.location.origin + '/' : isNetlify ? window.location.origin + '/' : '/';
-        
+
         // Referencias a elementos
         const playButton = document.getElementById('play-button');
         const video = document.getElementById('mivideo');
@@ -215,7 +288,7 @@
         const marker = document.querySelector('#marker-hiro');
         const infoDiv = document.querySelector('.info');
         const debugDiv = document.getElementById('debug-info');
-        const videoControls = document.getElementById('video-controls');
+        const mobileControls = document.getElementById('mobile-controls');
         const videoSelector = document.getElementById('video-selector');
         const prevVideoBtn = document.getElementById('prev-video');
         const nextVideoBtn = document.getElementById('next-video');
@@ -224,30 +297,88 @@
         const saturnRing = document.getElementById('saturn-ring');
         const saturnRingContainer = document.getElementById('saturn-ring-container');
         const starsContainer = document.getElementById('stars-container');
-        
+        const markerLostMessage = document.getElementById('marker-lost-message');
+
         // Estado del efecto
         let effectEnabled = true;
         let currentEffect = 'saturn';
-        
+
         // Array de videos disponibles
         const videos = Array.from(videoSelector.options).map(option => option.value);
         let currentVideoIndex = 0;
-        
+
         // Variables para la animación
         let expansionAnimation = null;
         let startTime = null;
-        let initialWidth = window.innerWidth <= 768 ? 0.08 : 0.1;
-        let initialHeight = window.innerWidth <= 768 ? 0.06 : 0.075;
-        let targetWidth = window.innerWidth <= 768 ? 2 : 3;
-        let targetHeight = window.innerWidth <= 768 ? 1.5 : 2.25;
+        let initialWidth = 0.1;
+        let initialHeight = 0.075;
+        let targetWidth = 3;
+        let targetHeight = 2.25;
         const animationDuration = 1500;
-        
+
         // Variables para efectos especiales
         let ringExpansionAnimation = null;
         let ringStartTime = null;
         let stars = [];
         let maxStars = 50;
-        
+
+        // Variable para controlar si el video ya se expandió
+        let videoExpanded = false;
+
+        // Tiempo para mostrar y ocultar mensajes de marcador perdido
+        let markerLostTimeout = null;
+
+        // Detectar dispositivo móvil
+        const isMobileDevice = () => {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                (typeof window.orientation !== "undefined") || 
+                window.innerWidth <= 768;
+        };
+
+        // Ajustar tamaños según el dispositivo
+        function setupDimensions() {
+            if (isMobileDevice()) {
+                // Dimensiones para móviles - más grandes que en el código original
+                initialWidth = 0.1;
+                initialHeight = 0.075;
+                targetWidth = 2.0;  // Más grande para móviles
+                targetHeight = 1.5; // Más grande para móviles
+                maxStars = 30; // Menos estrellas en móviles para mejor rendimiento
+                
+                showDebugInfo('📱 Usando dimensiones para móvil');
+            } else {
+                // Dimensiones para escritorio
+                initialWidth = 0.1;
+                initialHeight = 0.075;
+                targetWidth = 3;
+                targetHeight = 2.25;
+                maxStars = 50;
+                
+                showDebugInfo('💻 Usando dimensiones para escritorio');
+            }
+            
+            // Aplicar dimensiones iniciales (solo si no está expandido)
+            if (!videoExpanded) {
+                videoEntity.setAttribute('width', initialWidth);
+                videoEntity.setAttribute('height', initialHeight);
+                videoGlow.setAttribute('width', initialWidth);
+                videoGlow.setAttribute('height', initialHeight);
+            }
+        }
+
+        // Configurar controles según el dispositivo
+        function setupControls() {
+            if (isMobileDevice()) {
+                showDebugInfo('📱 Configurando controles para móvil');
+                document.querySelector('.desktop-controls').style.display = 'none';
+                effectToggle.textContent = effectEnabled ? 'Efectos ON' : 'Efectos OFF';
+            } else {
+                showDebugInfo('💻 Configurando controles para escritorio');
+                document.querySelector('.desktop-controls').style.display = 'block';
+                effectToggle.textContent = effectEnabled ? 'Desactivar Efecto' : 'Activar Efecto';
+            }
+        }
+
         // Función para mostrar información de depuración
         function showDebugInfo(msg) {
             debugDiv.innerHTML += msg + '<br>';
@@ -257,7 +388,7 @@
                 debugDiv.innerHTML = lines.slice(lines.length - 5).join('<br>');
             }
         }
-        
+
         // Función para animar la expansión usando requestAnimationFrame
         function animateExpansion(timestamp) {
             if (!startTime) startTime = timestamp;
@@ -292,7 +423,19 @@
                 expansionAnimation = null;
                 startTime = null;
                 
+                // Marcar que el video se ha expandido
+                videoExpanded = true;
+                
                 showDebugInfo('✅ Animación de expansión completada');
+                
+                // Guardar estado expandido en localStorage
+                try {
+                    localStorage.setItem('videoExpanded', 'true');
+                    localStorage.setItem('videoWidth', targetWidth);
+                    localStorage.setItem('videoHeight', targetHeight);
+                } catch (e) {
+                    console.error('Error al guardar en localStorage:', e);
+                }
                 
                 if (currentEffect === 'saturn') {
                     animateSaturnRing();
@@ -301,7 +444,7 @@
                 }
             }
         }
-        
+
         // Función para animar el anillo de Saturno
         function animateSaturnRing() {
             if (!effectEnabled) return;
@@ -324,7 +467,7 @@
             
             showDebugInfo('🪐 Efecto de Anillo de Saturno activado');
         }
-        
+
         // Función para animar la expansión del anillo
         function animateRingExpansion(timestamp) {
             if (!ringStartTime) ringStartTime = timestamp;
@@ -368,7 +511,7 @@
                 showDebugInfo('✨ Explosión galáctica completada');
             }
         }
-        
+
         // Función para crear estrellas alrededor del video
         function createStars() {
             if (!effectEnabled) return;
@@ -389,378 +532,408 @@
             
             // Crear nuevas estrellas
             for (let i = 0; i < maxStars; i++) {
-                createStar(videoWidth, videoHeight, i);
+                // Crear una estrella
+                var star = document.createElement('a-image');
+                
+                // Posiciones aleatorias alrededor del video
+                // Área más amplia alrededor del video
+                var offsetX = (Math.random() * 2 - 1) * (videoWidth + 0.5);
+                var offsetY = (Math.random() * 2 - 1) * (videoHeight + 0.5);
+                var offsetZ = Math.random() * 0.5 - 0.25;
+                
+                // Evitar poner estrellas sobre el video
+                if (Math.abs(offsetX) < videoWidth/2 && Math.abs(offsetY) < videoHeight/2) {
+                    // Si está dentro del video, moverla a los bordes
+                    var moveToEdge = Math.random() < 0.5 ? videoWidth/2 + 0.1 : -videoWidth/2 - 0.1;
+                    if (Math.random() < 0.5) {
+                        offsetX = moveToEdge;
+                    } else {
+                        offsetY = moveToEdge;
+                    }
+                }
+                
+                // Configurar propiedades de la estrella
+                star.setAttribute('src', '#star-texture');
+                star.setAttribute('position', {x: offsetX, y: offsetY, z: offsetZ});
+                
+                // Tamaños aleatorios
+                var size = Math.random() * 0.15 + 0.05;
+                star.setAttribute('width', size);
+                star.setAttribute('height', size);
+                
+                // Opacidad aleatoria
+                star.setAttribute('opacity', Math.random() * 0.8 + 0.2);
+                
+                // Colores aleatorios
+                var hues = [200, 220, 240, 260, 280, 300, 320]; // Azules, morados, rosas
+                var hue = hues[Math.floor(Math.random() * hues.length)];
+                var saturation = Math.floor(Math.random() * 30 + 70); // 70-100%
+                var lightness = Math.floor(Math.random() * 30 + 50); // 50-80%
+                star.setAttribute('color', `hsl(${hue}, ${saturation}%, ${lightness}%)`);
+                
+                // Material brillante
+                star.setAttribute('material', 'shader: flat; transparent: true; alphaTest: 0.1; depthTest: false; depthWrite: false; blending: additive');
+                
+                // Agregar al contenedor
+                starsContainer.appendChild(star);
+                
+                // Guardar referencia
+                stars.push(star);
+                
+                // Animar la estrella
+                animateStar(star);
             }
             
-            showDebugInfo('⭐ Efecto de Estrellas activado');
+            showDebugInfo('✨ Efecto de estrellas galácticas activado');
         }
-        
-        // Función para crear una estrella individual
-        function createStar(videoWidth, videoHeight, index) {
-            // Calcular posición aleatoria alrededor del video
-            var angle = Math.random() * Math.PI * 2;
-            var distanceFromBorder = 0.2 + Math.random() * 1.5; // Entre 0.2 y 1.7 unidades desde el borde
+
+        // Función para animar una estrella
+        function animateStar(star) {
+            // Duración aleatoria entre 2 y 5 segundos
+            var duration = Math.random() * 3000 + 2000;
             
-            // Calcular posición basada en el ángulo y la distancia
-            var posX, posY;
-            
-            // Posición más cercana al borde del video
-            var closestX = Math.cos(angle) * (videoWidth / 2);
-            var closestY = Math.sin(angle) * (videoHeight / 2);
-            
-            // Posición final = posición en el borde + distancia adicional en la misma dirección
-            posX = closestX + Math.cos(angle) * distanceFromBorder;
-            posY = closestY + Math.sin(angle) * distanceFromBorder;
-            
-            // Crear elemento de estrella
-            var star = document.createElement('a-entity');
-            
-            // Tamaño aleatorio
-            var size = 0.05 + Math.random() * 0.15;
-            
-            // Color aleatorio para las estrellas
-            var hue = Math.random() * 60 + 180; // Tonos azulados y verdosos
-            var saturation = 70 + Math.random() * 30;
-            var lightness = 70 + Math.random() * 30;
-            var color = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
-            
-            // Configurar propiedades de la estrella
-            star.setAttribute('geometry', 'primitive: plane; width: ' + size + '; height: ' + size);
-            star.setAttribute('material', 'shader: flat; src: #star-texture; transparent: true; color: ' + color);
-            star.setAttribute('position', posX + ' ' + posY + ' 0.01');
-            
-            // Agregar animación de parpadeo
-            var duration = 1 + Math.random() * 3;
-            var delay = Math.random() * 2;
-            
-            star.setAttribute('animation', 'property: material.opacity; from: 0.9; to: 0.3; dur: ' + (duration * 1000) + 
-                             '; delay: ' + (delay * 1000) + '; dir: alternate; loop: true; easing: easeInOutSine');
-            
-            // Guardar referencia y agregar al contenedor
-            stars.push(star);
-            starsContainer.appendChild(star);
-            
-            // Agregar una animación de rotación suave para algunas estrellas
-            if (Math.random() > 0.5) {
-                star.setAttribute('animation__rotate', 'property: rotation.z; from: 0; to: 360; dur: ' + 
-                                 (5000 + Math.random() * 10000) + '; loop: true; easing: linear');
+            // Detectar si el navegador soporta Web Animations API
+            if (typeof star.animate === 'function') {
+                // Usando Web Animations API para mejores efectos
+                var twinkle = star.animate([
+                    { opacity: star.getAttribute('opacity'), transform: 'scale(1)' },
+                    { opacity: 0.1, transform: 'scale(0.8)' },
+                    { opacity: star.getAttribute('opacity'), transform: 'scale(1.2)' },
+                    { opacity: 0.2, transform: 'scale(0.9)' },
+                    { opacity: star.getAttribute('opacity'), transform: 'scale(1)' }
+                ], {
+                    duration: duration,
+                    iterations: Infinity,
+                    easing: 'ease-in-out'
+                });
+            } else {
+                // Fallback para navegadores sin Web Animations API
+                var startOpacity = parseFloat(star.getAttribute('opacity'));
+                var startScale = 1.0;
+                var startTime = null;
+                
+                // Función básica de animación
+                function animateStarFallback(timestamp) {
+                    if (!startTime) startTime = timestamp;
+                    var elapsedTime = (timestamp - startTime) % duration;
+                    var progress = elapsedTime / duration;
+                    
+                    // Ciclo de parpadeo simple
+                    var opacity = startOpacity * (0.5 + 0.5 * Math.sin(progress * Math.PI * 2));
+                    var scale = startScale * (0.8 + 0.4 * Math.sin(progress * Math.PI * 2));
+                    
+                    star.setAttribute('opacity', opacity);
+                    star.setAttribute('scale', `${scale} ${scale} ${scale}`);
+                    
+                    requestAnimationFrame(animateStarFallback);
+                }
+                
+                requestAnimationFrame(animateStarFallback);
             }
         }
-        
+
         // Función para eliminar todas las estrellas
         function removeAllStars() {
-            for (let i = 0; i < stars.length; i++) {
-                if (stars[i].parentNode) {
-                    stars[i].parentNode.removeChild(stars[i]);
+            stars.forEach(star => {
+                if (star.parentNode) {
+                    star.parentNode.removeChild(star);
                 }
-            }
+            });
             stars = [];
         }
-        
-        // Función para activar el efecto de expansión
-        function triggerExpansionEffect() {
-            if (!effectEnabled) return;
-            
-            showDebugInfo('🔍 Iniciando efecto de expansión');
-            
-            // Cancelar cualquier animación en curso
-            if (expansionAnimation) {
-                cancelAnimationFrame(expansionAnimation);
-                expansionAnimation = null;
-                startTime = null;
+
+        // Función para cambiar de video
+        function changeVideo(direction) {
+            if (direction === 'next') {
+                currentVideoIndex = (currentVideoIndex + 1) % videos.length;
+            } else if (direction === 'prev') {
+                currentVideoIndex = (currentVideoIndex - 1 + videos.length) % videos.length;
+            } else {
+                // Si se proporciona un índice directo
+                currentVideoIndex = parseInt(direction);
             }
             
-            // Cancelar animaciones de efectos
-            if (ringExpansionAnimation) {
-                cancelAnimationFrame(ringExpansionAnimation);
-                ringExpansionAnimation = null;
-                ringStartTime = null;
-            }
+            const videoPath = videos[currentVideoIndex];
+            videoSelector.value = videoPath;
             
-            // Resetear el video a tamaño pequeño para la animación
-            videoEntity.setAttribute('width', initialWidth);
-            videoEntity.setAttribute('height', initialHeight);
-            videoEntity.setAttribute('opacity', 0.8);
-            
-            // Resetear el efecto de brillo al mismo tamaño
-            videoGlow.setAttribute('width', initialWidth);
-            videoGlow.setAttribute('height', initialHeight);
-            videoGlow.setAttribute('opacity', 0.3);
-            
-            // Ocultar efectos hasta que termine la expansión
-            saturnRing.setAttribute('visible', false);
-            starsContainer.setAttribute('visible', false);
-            
-            // Iniciar la nueva animación
-            expansionAnimation = requestAnimationFrame(animateExpansion);
+            loadVideo(videoPath);
+            showDebugInfo(`🎬 Cambiando a video: ${videoPath}`);
         }
-        
-        // Función para togglear el efecto
+
+        // Función para cargar un video
+        function loadVideo(videoPath) {
+            // Detener reproducciones previas
+            video.pause();
+            
+            // Usar la ruta base para cargar videos
+            const fullPath = videoPath.startsWith('./') ? 
+                baseUrl + videoPath.substring(2) : videoPath;
+            
+            video.src = fullPath;
+            video.load();
+            
+            // Reproducir después de cargar
+            video.oncanplaythrough = function() {
+                video.play()
+                    .then(() => {
+                        showDebugInfo(`▶️ Video reproduciendo: ${fullPath}`);
+                    })
+                    .catch(err => {
+                        showDebugInfo(`❌ Error al reproducir video: ${err.message}`);
+                    });
+            };
+            
+            video.onerror = function() {
+                showDebugInfo(`❌ Error al cargar video: ${fullPath}`);
+                infoDiv.innerHTML = "Error al cargar el video, verifica la ruta";
+            };
+        }
+
+        // Función para alternar efectos
         function toggleEffect() {
             effectEnabled = !effectEnabled;
-            effectToggle.textContent = effectEnabled ? 'Desactivar Efecto' : 'Activar Efecto';
             
-            if (!effectEnabled) {
-                // Si se desactiva, establecer tamaño completo inmediatamente
-                videoEntity.setAttribute('width', targetWidth);
-                videoEntity.setAttribute('height', targetHeight);
-                videoEntity.setAttribute('opacity', 1);
-                videoGlow.setAttribute('width', targetWidth);
-                videoGlow.setAttribute('height', targetHeight);
+            if (effectEnabled) {
+                effectToggle.textContent = isMobileDevice() ? 'Efectos ON' : 'Desactivar Efecto';
+                effectToggle.style.backgroundColor = '#2196F3';
                 
-                // Ocultar efectos
-                saturnRing.setAttribute('visible', false);
-                starsContainer.setAttribute('visible', false);
-                
-                // Cancelar cualquier animación en curso
-                if (expansionAnimation) {
-                    cancelAnimationFrame(expansionAnimation);
-                    expansionAnimation = null;
-                    startTime = null;
-                }
-
-                if (ringExpansionAnimation) {
-                    cancelAnimationFrame(ringExpansionAnimation);
-                    ringExpansionAnimation = null;
-                    ringStartTime = null;
-                }
-                
-                removeAllStars();
-                
-                showDebugInfo('❌ Efectos desactivados');
-            } else {
-                showDebugInfo('✅ Efectos activados');
-                // Si el marcador ya está visible, activar el efecto inmediatamente
-                if (marker.object3D.visible) {
-                    triggerExpansionEffect();
-                }
-            }
-        }
-        
-        // Función para cambiar el tipo de efecto
-        function changeEffect() {
-            currentEffect = effectsSelector.value;
-            showDebugInfo('🔄 Cambiando a efecto: ' + currentEffect);
-            
-            // Si el marcador está visible y ya pasó la expansión, aplicar el efecto inmediatamente
-            if (marker.object3D.visible && !expansionAnimation && effectEnabled) {
+                // Activar efecto actual
                 if (currentEffect === 'saturn') {
                     animateSaturnRing();
                 } else if (currentEffect === 'stars') {
                     createStars();
                 }
-            }
-        }
-        
-        // Función para verificar si estamos en un entorno local o Netlify
-        function isLocalEnvironment() {
-            return window.location.hostname === 'localhost' || 
-                   window.location.hostname === '127.0.0.1' ||
-                   window.location.hostname.includes('netlify.app');
-        }
-        
-        // Función para obtener la URL base correcta
-        function getBaseUrl() {
-            if (isLocalEnvironment()) {
-                return window.location.origin + '/';
+                
+                showDebugInfo('✅ Efectos activados');
             } else {
-                return '/';
+                effectToggle.textContent = isMobileDevice() ? 'Efectos OFF' : 'Activar Efecto';
+                effectToggle.style.backgroundColor = '#f44336';
+                
+                // Ocultar todos los efectos
+                saturnRing.setAttribute('visible', false);
+                starsContainer.setAttribute('visible', false);
+                removeAllStars();
+                
+                // Detener animaciones
+                if (ringExpansionAnimation) {
+                    cancelAnimationFrame(ringExpansionAnimation);
+                    ringExpansionAnimation = null;
+                }
+                
+                showDebugInfo('❌ Efectos desactivados');
             }
         }
-        
-        // Función para verificar permisos de cámara
-        async function checkCameraPermissions() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                stream.getTracks().forEach(track => track.stop());
-                showDebugInfo('✅ Permisos de cámara concedidos');
-                return true;
-            } catch (error) {
-                showDebugInfo('❌ Error al acceder a la cámara: ' + error.message);
-                return false;
-            }
-        }
-        
-        // Modificar la función de inicio para incluir verificación de cámara
-        playButton.addEventListener('click', async function() {
-            // Verificar permisos de cámara
-            const hasCameraAccess = await checkCameraPermissions();
-            if (!hasCameraAccess) {
-                alert('Por favor, permite el acceso a la cámara para usar la realidad aumentada');
-                return;
-            }
+
+        // Función para cambiar el tipo de efecto
+        function changeEffect(effect) {
+            currentEffect = effect;
             
-            // Mostrar controles
-            videoControls.style.display = 'block';
-            effectToggle.style.display = 'block';
-            effectsSelector.style.display = 'block';
+            // Actualizar el selector en la interfaz
+            effectsSelector.value = effect;
             
-            // Ajustar según el dispositivo
-            if (isMobileDevice()) {
-                videoEntity.setAttribute('width', initialWidth);
-                videoEntity.setAttribute('height', initialHeight);
-                videoGlow.setAttribute('width', initialWidth);
-                videoGlow.setAttribute('height', initialHeight);
-            }
-            
-            // Cargar el primer video
-            var initialVideo = videoSelector.value;
-            await loadAndPlayVideo(initialVideo);
-            
-            // Ocultar el botón
-            this.style.display = 'none';
-        });
-        
-        // Eventos del marcador
-        marker.addEventListener('markerFound', function() {
-            showDebugInfo('🎯 Marcador encontrado');
-            
-            // Asegurar que el video esté reproduciendo cuando se encuentra el marcador
-            if (video.paused && video.readyState >= 2) {
-                video.play().catch(e => showDebugInfo('❌ Error al reproducir en marcador: ' + e.message));
-            }
-            
-            infoDiv.textContent = "¡Marcador encontrado! Mostrando video con efecto.";
-            
-            // Activar el efecto de expansión
+            // Si los efectos están activados, cambiar inmediatamente
             if (effectEnabled) {
-                triggerExpansionEffect();
-            }
-        });
-        
-        marker.addEventListener('markerLost', function() {
-            showDebugInfo('🔍 Marcador perdido');
-            infoDiv.textContent = "Marcador perdido. Muestra el marcador Hiro a la cámara.";
-        });
-        
-        // Eventos para el selector de videos y botones
-        videoSelector.addEventListener('change', function() {
-            currentVideoIndex = this.selectedIndex;
-            loadAndPlayVideo(this.value);
-        });
-        
-        prevVideoBtn.addEventListener('click', prevVideo);
-        nextVideoBtn.addEventListener('click', nextVideo);
-        
-        // Botón para activar/desactivar efecto
-        effectToggle.addEventListener('click', toggleEffect);
-        
-        // Selector de efectos
-        effectsSelector.addEventListener('change', changeEffect);
-        
-        // Establecer texto inicial del botón de efecto
-        effectToggle.textContent = effectEnabled ? 'Desactivar Efecto' : 'Activar Efecto';
-        
-        // Comprobar CORS y permisos
-        if (window.location.protocol === 'file:') {
-            showDebugInfo('⚠️ Ejecutando desde archivo local (recomendado usar servidor)');
-        } else {
-            showDebugInfo('✅ Ejecutando desde servidor: ' + window.location.href);
-        }
-        
-        // Verificar formato del navegador
-        showDebugInfo('🌐 Navegador: ' + navigator.userAgent.substring(0, 50) + '...');
-        
-        // Añadir detección de orientación del dispositivo
-        window.addEventListener('orientationchange', function() {
-            // Recalcular tamaños cuando cambia la orientación
-            initialWidth = window.innerWidth <= 768 ? 0.08 : 0.1;
-            initialHeight = window.innerWidth <= 768 ? 0.06 : 0.075;
-            targetWidth = window.innerWidth <= 768 ? 2 : 3;
-            targetHeight = window.innerWidth <= 768 ? 1.5 : 2.25;
-            
-            // Reajustar el video si está visible
-            if (marker.object3D.visible) {
-                videoEntity.setAttribute('width', initialWidth);
-                videoEntity.setAttribute('height', initialHeight);
-                videoGlow.setAttribute('width', initialWidth);
-                videoGlow.setAttribute('height', initialHeight);
-            }
-        });
-        
-        // Añadir detección de entorno local
-        window.addEventListener('load', function() {
-            if (isLocalEnvironment()) {
-                showDebugInfo('🏠 Ejecutando en servidor local');
-                showDebugInfo('🌐 URL base: ' + getBaseUrl());
-            }
-            
-            setupMobileOptimizations();
-            showDebugInfo('📱 Es móvil: ' + isMobileDevice());
-        });
-        
-        // Modificar la función loadAndPlayVideo para usar la URL base correcta
-        async function loadAndPlayVideo(videoSrc) {
-            if (!video.paused) {
-                video.pause();
-            }
-            
-            // Construir la URL completa del video
-            var fullVideoSrc = getBaseUrl() + videoSrc;
-            
-            showDebugInfo('🔄 Cambiando a video: ' + fullVideoSrc);
-            
-            try {
-                video.src = fullVideoSrc;
-                await video.load();
-                showDebugInfo('✅ Nuevo video cargado');
-                
-                await video.play();
-                showDebugInfo('▶️ Reproduciendo nuevo video');
-                
-                if (marker.object3D.visible && effectEnabled) {
-                    triggerExpansionEffect();
-                }
-            } catch (error) {
-                showDebugInfo('❌ Error al reproducir nuevo video: ' + error.message);
-                
-                if (videoSrc === 'video.mp4') {
-                    showDebugInfo('⚠️ El video local falló, probando alternativo');
-                    loadAndPlayVideo(videos[1]);
-                    videoSelector.selectedIndex = 1;
-                    currentVideoIndex = 1;
+                if (effect === 'saturn') {
+                    animateSaturnRing();
+                } else if (effect === 'stars') {
+                    createStars();
                 }
             }
+            
+            showDebugInfo(`🌌 Efecto cambiado a: ${effect}`);
         }
-        
-        // Función para cambiar al siguiente video
-        function nextVideo() {
-            currentVideoIndex = (currentVideoIndex + 1) % videos.length;
-            videoSelector.selectedIndex = currentVideoIndex;
-            loadAndPlayVideo(videos[currentVideoIndex]);
-        }
-        
-        // Función para cambiar al video anterior
-        function prevVideo() {
-            currentVideoIndex = (currentVideoIndex - 1 + videos.length) % videos.length;
-            videoSelector.selectedIndex = currentVideoIndex;
-            loadAndPlayVideo(videos[currentVideoIndex]);
-        }
-        
-        // Función para detectar si es un dispositivo móvil
-        function isMobileDevice() {
-            return (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf("IEMobile") !== -1);
-        }
-        
-        // Añadir detección de dispositivo móvil y ajustes
-        function setupMobileOptimizations() {
+
+        // Función para iniciar la experiencia AR
+        function startARExperience() {
+            // Ocultar botón de inicio
+            playButton.style.display = 'none';
+            
+            // Actualizar mensaje informativo
+            infoDiv.innerHTML = "Escaneando marcador Hiro...";
+            
+            // Mostrar controles si es un dispositivo móvil
             if (isMobileDevice()) {
-                showDebugInfo('📱 Dispositivo móvil detectado');
+                mobileControls.style.display = 'block';
+            }
+            
+            // Intentar iniciar el video
+            loadVideo(videos[currentVideoIndex]);
+            
+            // Verificar si ya hay un estado guardado en localStorage
+            try {
+                if (localStorage.getItem('videoExpanded') === 'true') {
+                    videoExpanded = true;
+                    const savedWidth = parseFloat(localStorage.getItem('videoWidth')) || targetWidth;
+                    const savedHeight = parseFloat(localStorage.getItem('videoHeight')) || targetHeight;
+                    
+                    // Aplicar dimensiones guardadas
+                    videoEntity.setAttribute('width', savedWidth);
+                    videoEntity.setAttribute('height', savedHeight);
+                    videoGlow.setAttribute('width', savedWidth);
+                    videoGlow.setAttribute('height', savedHeight);
+                    
+                    showDebugInfo('🔄 Restaurando estado guardado del video');
+                }
+            } catch (e) {
+                console.error('Error al acceder a localStorage:', e);
+            }
+            
+            showDebugInfo('🚀 Iniciando experiencia AR');
+        }
+
+        // Función para manejar la detección del marcador
+        function handleMarkerFound() {
+            infoDiv.innerHTML = "¡Marcador detectado! Reproduciendo video con efectos";
+            
+            // Ocultar mensaje de marcador perdido si estaba visible
+            markerLostMessage.style.display = 'none';
+            
+            // Limpiar cualquier timeout anterior
+            if (markerLostTimeout) {
+                clearTimeout(markerLostTimeout);
+                markerLostTimeout = null;
+            }
+            
+            // Verificar si el video está en su tamaño expandido o si necesita expandirse
+            const currentVideoWidth = parseFloat(videoEntity.getAttribute('width'));
+            
+            // Solo iniciar la animación si el video no está ya expandido
+            if (currentVideoWidth < targetWidth && !expansionAnimation) {
+                // Si no está completamente expandido, iniciamos la animación
+                startTime = null;
+                expansionAnimation = requestAnimationFrame(animateExpansion);
+                showDebugInfo('🔍 Marcador detectado, iniciando animación de expansión');
+            } else if (currentVideoWidth >= targetWidth) {
+                // Si ya está expandido, asegurarnos de mantener ese tamaño
+                showDebugInfo('🔍 Marcador detectado, manteniendo tamaño expandido');
                 
-                // Ajustar tamaños para móviles
-                initialWidth = 0.08;
-                initialHeight = 0.06;
-                targetWidth = 2;
-                targetHeight = 1.5;
-                
-                // Ajustar la interfaz para móviles
-                document.querySelector('.info').style.fontSize = '16px';
-                document.querySelector('.info').style.padding = '10px';
-                
-                // Optimizar para pantallas táctiles
-                document.body.style.touchAction = 'none';
+                // Asegurarse de que los efectos estén activos si están habilitados
+                if (effectEnabled) {
+                    if (currentEffect === 'saturn') {
+                        // Solo iniciar el efecto de Saturno si no está ya en ejecución
+                        if (!ringExpansionAnimation) animateSaturnRing();
+                    } else if (currentEffect === 'stars') {
+                        // Refrescar efecto de estrellas si está habilitado
+                        if (stars.length === 0) createStars();
+                    }
+                }
+            }
+            
+            // Asegurarse de que el video se esté reproduciendo
+            if (video.paused) {
+                video.play().catch(err => {
+                    showDebugInfo(`❌ Error al reanudar video: ${err.message}`);
+                });
             }
         }
+
+        // Función para manejar la pérdida del marcador
+        function handleMarkerLost() {
+            infoDiv.innerHTML = "Marcador perdido. Acerca el marcador a la cámara";
+            
+            showDebugInfo('⚠️ Marcador perdido');
+            
+            // Mostrar mensaje de marcador perdido después de un breve retraso
+            if (markerLostTimeout) clearTimeout(markerLostTimeout);
+            
+            markerLostTimeout = setTimeout(() => {
+                markerLostMessage.style.display = 'block';
+            }, 1500); // Mostrar después de 1.5 segundos para evitar parpadeos
+            
+            // Ya no reducimos el tamaño del video al perder el marcador
+            // Simplemente mantenemos el tamaño actual para que permanezca expandido
+            
+            // Opcional: Pausar video cuando se pierde el marcador
+            // video.pause();
+        }
+
+        // Función para cargar estado guardado
+        function loadSavedState() {
+            try {
+                // Verificar si hay estado guardado
+                if (localStorage.getItem('videoExpanded') === 'true') {
+                    videoExpanded = true;
+                    const savedWidth = parseFloat(localStorage.getItem('videoWidth')) || targetWidth;
+                    const savedHeight = parseFloat(localStorage.getItem('videoHeight')) || targetHeight;
+                    
+                    // Aplicar dimensiones guardadas
+                    videoEntity.setAttribute('width', savedWidth);
+                    videoEntity.setAttribute('height', savedHeight);
+                    videoGlow.setAttribute('width', savedWidth);
+                    videoGlow.setAttribute('height', savedHeight);
+                    
+                    showDebugInfo('🔄 Estado del video restaurado desde localStorage');
+                }
+            } catch (e) {
+                console.error('Error al cargar estado desde localStorage:', e);
+            }
+        }
+
+        // Configurar evento para el botón de inicio
+        playButton.addEventListener('click', startARExperience);
+
+        // Configurar eventos para controles móviles
+        prevVideoBtn.addEventListener('click', () => changeVideo('prev'));
+        nextVideoBtn.addEventListener('click', () => changeVideo('next'));
+        effectToggle.addEventListener('click', toggleEffect);
+        effectsSelector.addEventListener('change', (e) => changeEffect(e.target.value));
+        videoSelector.addEventListener('change', (e) => {
+            const newVideoPath = e.target.value;
+            loadVideo(newVideoPath);
+            
+            // Actualizar el índice actual
+            currentVideoIndex = videos.indexOf(newVideoPath);
+            if (currentVideoIndex === -1) currentVideoIndex = 0;
+            
+            // Al cambiar de video, mantener el tamaño expandido si ya estaba expandido
+            if (videoExpanded) {
+                // Si estaba expandido, aplicar inmediatamente el tamaño expandido al nuevo video
+                setTimeout(() => {
+                    videoEntity.setAttribute('width', targetWidth);
+                    videoEntity.setAttribute('height', targetHeight);
+                    videoGlow.setAttribute('width', targetWidth);
+                    videoGlow.setAttribute('height', targetHeight);
+                    showDebugInfo('🎬 Nuevo video manteniendo tamaño expandido');
+                }, 100);
+            }
+        });
+
+        // Configurar eventos para detectar el marcador
+        marker.addEventListener('markerFound', handleMarkerFound);
+        marker.addEventListener('markerLost', handleMarkerLost);
+
+        // Manejar clic en el mensaje de marcador perdido para ocultarlo
+        markerLostMessage.addEventListener('click', () => {
+            markerLostMessage.style.display = 'none';
+        });
+
+        // Inicializar dimensiones y controles
+        window.addEventListener('load', () => {
+            setupDimensions();
+            setupControls();
+            loadSavedState();
+            showDebugInfo('🌟 Aplicación AR inicializada');
+        });
+
+        // Manejar cambios de orientación en dispositivos móviles
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                setupDimensions();
+                showDebugInfo('📱 Orientación cambiada, ajustando dimensiones');
+            }, 300);
+        });
+
+        // Manejar cambios de tamaño de ventana
+        window.addEventListener('resize', () => {
+            clearTimeout(window.resizeTimer);
+            window.resizeTimer = setTimeout(() => {
+                setupDimensions();
+                showDebugInfo('🖥️ Tamaño de ventana cambiado, ajustando dimensiones');
+            }, 250);
+        });
+
+        // Mensaje inicial de console
+        console.log('Video en Realidad Aumentada con Efectos Galácticos v1.1');
     </script>
 </body>
 </html>
