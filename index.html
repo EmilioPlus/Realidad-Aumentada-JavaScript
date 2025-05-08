@@ -242,13 +242,12 @@
                 id="video-entity"
                 src="#mivideo" 
                 position="0 0.5 0" 
-                rotation="-90 0 0" 
                 width="0.1" 
                 height="0.075"
                 opacity="1">
             </a-video>
             
-            <a-entity id="saturn-ring-container" position="0 0.49 0" rotation="-90 0 0">
+            <a-entity id="saturn-ring-container" position="0 0.49 0" >
                 <a-torus 
                     id="saturn-ring" 
                     color="#bf40bf" 
@@ -262,14 +261,13 @@
                 </a-torus>
             </a-entity>
             
-            <a-entity id="stars-container" position="0 0.49 0" rotation="-90 0 0" visible="false">
+            <a-entity id="stars-container" position="0 0.49 0" visible="false">
             </a-entity>
             
             <a-plane 
                 id="video-glow"
                 color="#00ffff" 
-                position="0 0.49 0" 
-                rotation="-90 0 0" 
+                position="0 0.49 0"
                 width="0.1" 
                 height="0.075" 
                 opacity="0.1"
@@ -830,6 +828,7 @@
             
             // Verificar si el video está en su tamaño expandido o si necesita expandirse
             const currentVideoWidth = parseFloat(videoEntity.getAttribute('width'));
+            updateVideoOrientation();
             
             // Solo iniciar la animación si el video no está ya expandido
             if (currentVideoWidth < targetWidth && !expansionAnimation) {
@@ -860,6 +859,67 @@
                 });
             }
         }
+        let orientationUpdateInterval = setInterval(updateVideoOrientation, 100);
+        window.addEventListener('deviceorientation', updateVideoOrientation);
+        window.addEventListener('orientationchange', updateVideoOrientation);
+        // Sistema para mantener el video en orientación vertical
+        function updateVideoOrientation() {
+            // Obtener la orientación del dispositivo
+            const orientation = window.orientation || 0;
+            const videoEntity = document.getElementById('video-entity');
+            const saturnRingContainer = document.getElementById('saturn-ring-container');
+            const starsContainer = document.getElementById('stars-container');
+            const videoGlow = document.getElementById('video-glow');
+            
+            // Matriz de cámara respecto al marcador
+            const camera = document.querySelector('a-entity[camera]');
+            const marker = document.querySelector('#marker-hiro');
+            
+            if (camera && marker && marker.object3D.visible) {
+                // Calcular orientación relativa
+                const cameraWorldPosition = new THREE.Vector3();
+                camera.object3D.getWorldPosition(cameraWorldPosition);
+                
+                const markerWorldPosition = new THREE.Vector3();
+                marker.object3D.getWorldPosition(markerWorldPosition);
+                
+                // Vector de dirección desde marcador a cámara
+                const direction = new THREE.Vector3().subVectors(cameraWorldPosition, markerWorldPosition).normalize();
+                
+                // Calcular rotación para que el video siempre mire hacia la cámara
+                // pero mantenga su orientación "vertical" respecto al mundo
+                const lookAtRotation = new THREE.Euler().setFromQuaternion(
+                    new THREE.Quaternion().setFromRotationMatrix(
+                        new THREE.Matrix4().lookAt(
+                            new THREE.Vector3(0, 0, 0),
+                            direction,
+                            new THREE.Vector3(0, 1, 0)
+                        )
+                    )
+                );
+                
+                // Convertir radianes a grados
+                const rotX = THREE.MathUtils.radToDeg(lookAtRotation.x);
+                const rotY = THREE.MathUtils.radToDeg(lookAtRotation.y);
+                const rotZ = THREE.MathUtils.radToDeg(lookAtRotation.z);
+                
+                // Ajustar por la orientación del dispositivo
+                let deviceCorrection = 0;
+                if (orientation === 90) deviceCorrection = -90;
+                if (orientation === -90) deviceCorrection = 90;
+                if (orientation === 180) deviceCorrection = 180;
+                
+                // Aplicar rotación al video y todos los elementos relacionados
+                videoEntity.setAttribute('rotation', `${rotX} ${rotY} ${rotZ + deviceCorrection}`);
+                saturnRingContainer.setAttribute('rotation', `${rotX} ${rotY} ${rotZ + deviceCorrection}`);
+                starsContainer.setAttribute('rotation', `${rotX} ${rotY} ${rotZ + deviceCorrection}`);
+                videoGlow.setAttribute('rotation', `${rotX} ${rotY} ${rotZ + deviceCorrection}`);
+                
+                // Debug
+                showDebugInfo(`🔄 Video reorientado: x:${rotX.toFixed(1)}° y:${rotY.toFixed(1)}° z:${rotZ.toFixed(1)}°`);
+            }
+        }
+
         // Función para manejar la pérdida del marcador
         function handleMarkerLost() {
             infoDiv.innerHTML = "Marcador perdido. Acerca el marcador a la cámara";
